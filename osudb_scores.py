@@ -53,6 +53,7 @@ b_sets = ["958476"]
 b_ids = ["2006816"]
 mod_container_path = "/html/body/div[7]/div/div/div[3]/div[1]/div/div[3]/div/div[1]/div[2]/div/div/div[2]/div[3]/div[6]/div[2]"
 unselected_mod = "[@class='beatmap-scoreboard-mod']"
+selected_mod = "[@class='beatmap-scoreboard-mod beatmap-scoreboard-mod--enabled']"
 score_path = "/html/body/div[7]/div/div/div[3]/div[1]/div/div[3]/div/div[1]/div[2]/div/div/div[2]/div[1]/div/div[2]"
 acc_path = "/html/body/div[7]/div/div/div[3]/div[1]/div/div[3]/div/div[1]/div[2]/div/div/div[2]/div[2]/div[1]/div[2]"
 pp_path = "/html/body/div[7]/div/div/div[3]/div[1]/div/div[3]/div/div[1]/div[2]/div/div/div[2]/div[3]/div[4]/div[2]/span"
@@ -70,6 +71,12 @@ FL = ["FL","/html/body/div[7]/div/div/div[3]/div[1]/div/div[2]/button[11]"]
 SO = ["SO","/html/body/div[7]/div/div/div[3]/div[1]/div/div[2]/button[12]"]
 wait = WebDriverWait(driver, 2) 
 
+def selected(path, status=True):
+    if status is True:
+        wait.until(EC.presence_of_element_located((By.XPATH, path+selected_mod)))
+    else:
+        wait.until(EC.presence_of_element_located((By.XPATH, path+unselected_mod)))
+
 def score_data():
     SCORE = wait.until(EC.presence_of_element_located((By.XPATH, score_path))).text
     ACC = wait.until(EC.presence_of_element_located((By.XPATH, acc_path))).text
@@ -80,34 +87,23 @@ def mod(mod, single=True, override=False, disable=False):
     if disable is False:
         MOD = driver.find_element(By.XPATH, mod[1])
         MOD.click()
-        if single is True:
-            try:
-                if mod is NM:
-                    wait.until(EC.presence_of_element_located((By.XPATH, mod_container_path)))
-                else:
-                    wait.until(EC.presence_of_element_located((By.XPATH, mod_container_path+"/div[@class='mod mod--"+mod[0]+"']")))
-                print(mod[0]+"--OK")
-                score_data()                
-            except:
-                print("--NO SCORE")
-            MOD.click()
-            wait.until(EC.presence_of_element_located((By.XPATH, mod[1]+unselected_mod)))
-        elif override is True: 
-            try:          
-                wait.until(EC.presence_of_element_located((By.XPATH, mod_container_path+"/div[@class='mod mod--"+mod[0]+"']")))
-                print("override--OK")
+        try:
+            if single is True:            
+                selected(mod[1])
+                score_data()   
+                MOD.click()
+                selected(mod[1], status=False)
+            elif override is True:      
+                selected(mod[1])
                 score_data()
-            except:
-                print("--NO SCORE")
-        else:
-            try:
-                wait.until(EC.presence_of_element_located((By.XPATH, mod_container_path+"/div[@class='mod mod--"+mod[0]+"']")))
-            except:
-                print("--??")
+            elif override is True:
+                selected(mod[1])
+        except:
+            print("--NO SCORE")
     else: 
         MOD = driver.find_element(By.XPATH, mod[1])
         MOD.click()
-        wait.until(EC.presence_of_element_located((By.XPATH, mod[1]+unselected_mod)))
+        selected(mod[1], status=False)
 
 def multi_mod(*args):
     for arg in args[:-1]:
@@ -118,6 +114,7 @@ def multi_mod(*args):
 
 def check_single(*args):
     for arg in args:
+        print("echo--",arg[0])
         mod(arg)
 
 def check_multi(*mods):
@@ -136,7 +133,7 @@ for b_set in b_sets:
         # Wait for mod's objects
         wait.until(EC.presence_of_element_located((By.XPATH, NM[1])))
         # Single Mod
-        check_single(NM,EZ,NF,HR,SD,DT,HD,FL)
+        check_single(NM,EZ,HR,SD,DT,HD,FL)
         # Multi Mod
         check_multi((HD,HR),(EZ,DT),(EZ,HD),(EZ,FL),(HD,FL),(HR,FL),(DT,FL),(DT,HR),(HD,DT),(EZ,HD,FL),(EZ,DT,HD),(EZ,DT,FL),(HD,DT,HR),(HD,DT,FL),(DT,HR,FL),(HD,HR,FL),(EZ,HD,DT,FL),(HR,HD,DT,FL))
 
